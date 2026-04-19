@@ -27,7 +27,7 @@ function useSectionProgress() {
     const onScroll = () => {
       if (!ref.current) return
       const rect = ref.current.getBoundingClientRect()
-      setProgress(Math.min(1, Math.max(0, (window.innerHeight * 0.88 - rect.top) / (window.innerHeight * 0.55))))
+      setProgress(Math.min(1, Math.max(0, (window.innerHeight * 0.88 - rect.top) / (window.innerHeight * 0.66))))
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     setTimeout(onScroll, 50)
@@ -41,8 +41,8 @@ function fadeIn(progress: number, start: number, end: number): React.CSSProperti
   return { filter: `blur(${((1-p)*16).toFixed(1)}px)`, opacity: Number(p.toFixed(3)), transform: `translateY(${((1-p)*22).toFixed(1)}px)`, transition: p > 0 ? 'filter 0.6s cubic-bezier(0.4,0,0.2,1),opacity 0.6s cubic-bezier(0.4,0,0.2,1),transform 0.6s cubic-bezier(0.4,0,0.2,1)' : 'none', willChange: 'filter,opacity,transform' }
 }
 
-const CLIP = 'polygon(0% 0%,88% 0%,100% 5%,100% 95%,88% 100%,0% 100%)'
-const CARD_W = 220, CARD_W_ACTIVE = 265, CARD_H = 385, CARD_H_ACTIVE = 450, GAP = 14, LIFT = 32
+const CLIP = 'polygon(0% 0%, 80% 5%, 95% 35%, 100% 100%, 20% 95%, 5% 65%)'
+const CARD_W = 225, CARD_W_ACTIVE = 295, CARD_H = 385, CARD_H_ACTIVE = 490, GAP = 18, LIFT = 38
 
 export default function CollectionCarousel({ products, settings }: Props) {
   const { ref, progress } = useSectionProgress()
@@ -109,10 +109,10 @@ export default function CollectionCarousel({ products, settings }: Props) {
       {/* Header */}
       <div style={{ ...fadeIn(progress, 0.0, 0.38), display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '0 52px', marginBottom: 40 }}>
         <div>
-          <p style={{ fontFamily: 'Barlow,sans-serif', fontSize: 13, fontWeight: 500, color: '#0d0d0d', marginBottom: 6 }}>{txt(cfg,'title','©calvac - jacket momento')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-            <span style={{ fontSize: 12, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'year','2026')}</span>
-            <span style={{ fontSize: 11, color: '#aaa', letterSpacing: '2px', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'other','[Other]')}</span>
+          <p style={{ fontFamily: 'Barlow,sans-serif', fontSize: 25, fontWeight: 800,letterSpacing: '3px',color: '#0d0d0d', marginBottom: 6 }}>{txt(cfg,'title','SHOP THE COLLECTIONS')}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 15, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'year','2026')}</span>
+            <span style={{ fontSize: 15, color: '#aaa', letterSpacing: '2px', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'other','[Other]')}</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -144,7 +144,7 @@ export default function CollectionCarousel({ products, settings }: Props) {
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
                 {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: '12%', height: 2, background: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }} />}
                 {isActive && vis(cfg,'wear') && (
-                  <div style={{ position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
+                  <div style={{ position: 'absolute', bottom: 36, left: 25, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
                     <span style={{ fontSize: 11, color: clr(cfg,'wear','rgba(255,255,255,0.9)'), letterSpacing: '0.5px', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'wear','[Wear the Moment]')}</span>
                   </div>
                 )}
@@ -155,9 +155,9 @@ export default function CollectionCarousel({ products, settings }: Props) {
       </div>
 
       {/* Dots */}
-      <div style={{ ...fadeIn(progress, 0.18, 0.58), display: 'flex', justifyContent: 'center', gap: 8, marginTop: 28 }}>
+      <div style={{ ...fadeIn(progress, 0.18, 0.58), display: 'flex', justifyContent: 'center', gap: 8, marginTop: -45 }}>
         {base.map((_, i) => (
-          <button key={i} onClick={() => goTo(total + i)} style={{ width: dotIdx === i ? 28 : 8, height: 3, borderRadius: 2, background: dotIdx === i ? '#0d0d0d' : '#ccc', border: 'none', cursor: 'pointer', padding: 0, transition: 'width 0.3s,background 0.3s' }} />
+          <button key={i} onClick={() => goTo(total + i)} style={{ width: dotIdx === i ? 28 : 8, height: 5, borderRadius: 2, background: dotIdx === i ? '#0d0d0d' : '#ccc', border: 'none', cursor: 'pointer', padding: 0, transition: 'width 0.3s,background 0.3s' }} />
         ))}
       </div>
     </section>

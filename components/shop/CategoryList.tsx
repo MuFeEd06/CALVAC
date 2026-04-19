@@ -134,15 +134,15 @@ export default function CategoryList({ categories, settings }: Props) {
   const activeSlug = categories[activeIdx]?.slug ?? activeCat?.name?.toLowerCase().replace(/\s+/g, '-') ?? ''
 
   return (
-    <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '72px 52px 80px' }}>
+    <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '72px 52px 80px', minHeight: 760 }}>
       <div style={{ position: 'absolute', right: '-2%', top: '0%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(340px,46vw,640px)', lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none', zIndex: 0 }}>C</div>
 
       <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '44fr 56fr', gap: '0 56px', alignItems: 'start' }}>
 
-        {/* ── LEFT: Image (changes per active category) + description + SEE PRODUCT ── */}
-        <div style={{ ...fadeIn(progress, 0.0, 0.42), position: 'relative', paddingBottom: 60 }}>
+        {/* ── LEFT: Image only — description & SEE PRODUCT are section-level absolute below ── */}
+        <div style={fadeIn(progress, 0.0, 0.42)}>
 
-          {/* ── FIX 2: Image box — shows activeImg (per-category or global) ── */}
+          {/* Image box */}
           <div style={{ position: 'relative', height: 520, overflow: 'hidden', background: clr(cfg, 'model_image', '#e2e0dc') }}>
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, height: '132%',
@@ -151,7 +151,7 @@ export default function CategoryList({ categories, settings }: Props) {
             }}>
               {activeImg ? (
                 <Image
-                  key={activeImg} // key forces re-render on image change
+                  key={activeImg}
                   src={activeImg}
                   alt={activeCat?.name ?? 'Category'}
                   fill
@@ -166,49 +166,6 @@ export default function CategoryList({ categories, settings }: Props) {
             {/* Arrow cutout */}
             <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '28%', background: cfg.bgColor, clipPath: 'polygon(100% 0%,100% 100%,0% 100%,40% 75%,0% 50%,40% 25%,0% 0%)', zIndex: 2 }} />
           </div>
-
-          {/* Description */}
-          {vis(cfg, 'description') && (
-            <div style={{ ...fadeIn(progress, 0.15, 0.5), marginTop: 28 }}>
-              <p style={{ fontSize: fsize(cfg, 'description', 13), lineHeight: 1.8, color: clr(cfg, 'description', '#666'), fontFamily: 'Barlow,sans-serif', maxWidth: 300, marginBottom: 0 }}>
-                {description}
-              </p>
-            </div>
-          )}
-
-          {/* SEE PRODUCT — absolutely positioned using x/y from admin config */}
-          {vis(cfg, 'see_product') && (() => {
-            // mergeConfig keys elements by id → cfg['see_product']; also handle array shape
-            const elRaw = (cfg as any)['see_product']
-            const el = elRaw ?? (Array.isArray((cfg as any).elements)
-              ? (cfg as any).elements.find((e: any) => e.id === 'see_product')
-              : null) ?? { x: 1, y: 90 }
-            // Canvas height ~760px; section padding-top is 72px
-            const topPx = (el.y / 100) * 760 - 72
-            return (
-              <Link
-                href={activeSlug ? `/shop?category=${activeSlug}` : '/shop'}
-                style={{
-                  position: 'absolute',
-                  left: `${el.x ?? 1}%`,
-                  top: topPx,
-                  display: 'inline-flex', alignItems: 'center', gap: 10,
-                  border: `1.5px solid ${clr(cfg, 'see_product', '#0d0d0d')}`,
-                  borderRadius: 40,
-                  padding: '9px 22px',
-                  fontSize: fsize(cfg, 'see_product', 10),
-                  fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase',
-                  textDecoration: 'none',
-                  color: clr(cfg, 'see_product', '#0d0d0d'),
-                  fontFamily: 'Barlow,sans-serif',
-                  whiteSpace: 'nowrap',
-                  zIndex: 5,
-                }}
-              >
-                {txt(cfg, 'see_product', 'SEE PRODUCT')} →
-              </Link>
-            )
-          })()}
         </div>
 
         {/* ── RIGHT: Category scroll wheel ── */}
@@ -249,6 +206,54 @@ export default function CategoryList({ categories, settings }: Props) {
           <p style={{ marginTop: 10, fontSize: 10, color: '#bbb', letterSpacing: '1px', fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>scroll or click to browse</p>
         </div>
       </div>
+
+      {/* Description — absolutely positioned on section, matching canvas coordinate system */}
+      {vis(cfg, 'description') && (() => {
+        const descEl = cfg.elements.get('description') ?? { x: 1, y: 78 }
+        // Canvas is 760px tall; section padding-top is 72px (already included in canvas coords)
+        return (
+          <div style={{
+            ...fadeIn(progress, 0.15, 0.5),
+            position: 'absolute',
+            left: `${descEl.x}%`,
+            top: (descEl.y / 100) * 760,
+            maxWidth: '36%',
+            zIndex: 5,
+          }}>
+            <p style={{ fontSize: fsize(cfg, 'description', 13), lineHeight: 1.8, color: clr(cfg, 'description', '#666'), fontFamily: 'Barlow,sans-serif', margin: 0 }}>
+              {description}
+            </p>
+          </div>
+        )
+      })()}
+
+      {/* SEE PRODUCT — absolutely positioned on section, matching canvas coordinate system */}
+      {vis(cfg, 'see_product') && (() => {
+        const seEl = cfg.elements.get('see_product') ?? { x: 1, y: 90 }
+        return (
+          <Link
+            href={activeSlug ? `/shop?category=${activeSlug}` : '/shop'}
+            style={{
+              position: 'absolute',
+              left: `${seEl.x}%`,
+              top: (seEl.y / 100) * 760,
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              border: `1.5px solid ${clr(cfg, 'see_product', '#0d0d0d')}`,
+              borderRadius: 40,
+              padding: '9px 22px',
+              fontSize: fsize(cfg, 'see_product', 10),
+              fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase',
+              textDecoration: 'none',
+              color: clr(cfg, 'see_product', '#0d0d0d'),
+              fontFamily: 'Barlow,sans-serif',
+              whiteSpace: 'nowrap',
+              zIndex: 5,
+            }}
+          >
+            {txt(cfg, 'see_product', 'SEE PRODUCT')} →
+          </Link>
+        )
+      })()}
 
       <style>{`@keyframes scrollDot{0%{transform:translateY(0);opacity:1}60%{transform:translateY(12px);opacity:.2}100%{transform:translateY(0);opacity:1}}`}</style>
     </section>
