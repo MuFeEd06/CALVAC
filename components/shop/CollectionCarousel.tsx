@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import type { Product, SiteSettings } from '@/types'
 import { mergeConfig, vis, txt, imgUrl, clr } from '@/lib/useMergedConfig'
 
@@ -47,6 +48,7 @@ const CARD_W = 225, CARD_W_ACTIVE = 295, CARD_H = 385, CARD_H_ACTIVE = 490, GAP 
 export default function CollectionCarousel({ products, settings }: Props) {
   const { ref, progress } = useSectionProgress()
   const cfg = mergeConfig(settings ?? null, 'carousel', DEFAULTS)
+  const router = useRouter()
 
   const base = products.length >= 4 ? products.slice(0, 6) : Array.from({ length: 6 }, (_, i) => ({ id: String(i), name: `Product ${i+1}`, images: [], slug: `product-${i+1}`, price: 2999 } as any))
   const total = base.length
@@ -56,6 +58,7 @@ export default function CollectionCarousel({ products, settings }: Props) {
   const initialized = useRef(false)
   const dragging = useRef(false)
   const dragStart = useRef({ x: 0, trackX: 0 })
+  const dragDistance = useRef(0)  // track how far we dragged to distinguish click vs drag
   const dotIdx = activeIdx % total
 
   // Card colors from admin or fallbacks
@@ -93,8 +96,8 @@ export default function CollectionCarousel({ products, settings }: Props) {
   const prev = () => goTo(activeIdx - 1)
   const next = () => goTo(activeIdx + 1)
 
-  const onDragStart = (x: number) => { dragging.current = true; dragStart.current = { x, trackX } }
-  const onDragMove = (x: number) => { if (!dragging.current) return; setTrackX(dragStart.current.trackX + x - dragStart.current.x) }
+  const onDragStart = (x: number) => { dragging.current = true; dragDistance.current = 0; dragStart.current = { x, trackX } }
+  const onDragMove = (x: number) => { if (!dragging.current) return; dragDistance.current = Math.abs(x - dragStart.current.x); setTrackX(dragStart.current.trackX + x - dragStart.current.x) }
   const onDragEnd = (x: number) => {
     if (!dragging.current) return
     dragging.current = false
@@ -138,7 +141,15 @@ export default function CollectionCarousel({ products, settings }: Props) {
             const imgSrc = cardImgs[i % cardImgs.length] || item?.images?.[0]
             const dist = Math.abs(i - activeIdx)
             return (
-              <div key={i} onClick={() => goTo(i)} style={{ flexShrink: 0, width: w, height: h, position: 'relative', overflow: 'hidden', background: bg, clipPath: CLIP, cursor: 'pointer', transform: `translateY(${isActive ? -LIFT : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.92 : dist === 2 ? 0.75 : 0.5, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1),height 0.5s cubic-bezier(0.4,0,0.2,1),transform 0.5s cubic-bezier(0.4,0,0.2,1),opacity 0.4s', willChange: 'transform,width,height', userSelect: 'none' }}>
+              <div key={i} onClick={() => {
+                // If dragged more than 8px it's a swipe, not a click
+                if (dragDistance.current > 8) return
+                if (isActive && item?.slug) {
+                  router.push(`/product/${item.slug}`)
+                } else {
+                  goTo(i)
+                }
+              }} style={{ flexShrink: 0, width: w, height: h, position: 'relative', overflow: 'hidden', background: bg, clipPath: CLIP, cursor: isActive ? 'pointer' : 'pointer', transform: `translateY(${isActive ? -LIFT : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.92 : dist === 2 ? 0.75 : 0.5, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1),height 0.5s cubic-bezier(0.4,0,0.2,1),transform 0.5s cubic-bezier(0.4,0,0.2,1),opacity 0.4s', willChange: 'transform,width,height', userSelect: 'none' }}>
                 {imgSrc ? <Image src={imgSrc} alt={item.name} fill draggable={false} style={{ objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} />
                   : <div style={{ width: '100%', height: '100%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif', textAlign: 'center', padding: 10 }}>{item?.name}</span></div>}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
@@ -146,6 +157,20 @@ export default function CollectionCarousel({ products, settings }: Props) {
                 {isActive && vis(cfg,'wear') && (
                   <div style={{ position: 'absolute', bottom: 36, left: 25, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
                     <span style={{ fontSize: 11, color: clr(cfg,'wear','rgba(255,255,255,0.9)'), letterSpacing: '0.5px', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'wear','[Wear the Moment]')}</span>
+                  </div>
+                )}
+                {/* Product name + view prompt on active card */}
+                {isActive && item?.slug && (
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 16px 14px', pointerEvents: 'none' }}>
+                    {item?.name && (
+                      <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 700, fontSize: 15, color: '#fff', margin: '0 0 4px', letterSpacing: '0.5px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        {item.name}
+                      </p>
+                    )}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '4px 12px' }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#fff', fontFamily: 'Barlow,sans-serif' }}>View Product</span>
+                      <span style={{ fontSize: 10, color: '#fff' }}>→</span>
+                    </div>
                   </div>
                 )}
               </div>
