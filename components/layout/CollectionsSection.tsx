@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Product, SiteSettings } from '@/types'
 import { mergeConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
+import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
 
@@ -49,6 +50,8 @@ export default function CollectionsSection({ products, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
   const cfg = mergeConfig(settings ?? null, 'collections', DEFAULTS)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
+  const txCfg = getScrollTransitionConfig(settings)
+  const exitStyle = scrollExitStyle(scrollY, txCfg)
 
   const parallax1 = (scrollY * 0.16).toFixed(1)
   const parallax2 = (scrollY * 0.22).toFixed(1)
@@ -60,10 +63,6 @@ export default function CollectionsSection({ products, settings }: Props) {
     { id: 'col3', def: 'Seasonal Collections 2025' },
   ]
 
-  // Derive URL slug from the editable collection name
-  const toTagSlug = (name: string) =>
-    name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-
   return (
     <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '80px 52px 88px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '42fr 58fr', gap: '0 60px', alignItems: 'start' }}>
@@ -71,7 +70,7 @@ export default function CollectionsSection({ products, settings }: Props) {
         {/* ── LEFT COLUMN ── */}
         <div>
           {vis(cfg,'intro') && (
-            <div style={fadeIn(progress, 0.0, 0.35)}>
+            <div style={{ ...fadeIn(progress, 0.0, 0.35), ...exitStyle }}>
               <p style={{ fontSize: fsize(cfg,'intro',12), lineHeight: 1.8, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', maxWidth: 220, marginBottom: 32, textAlign: 'center', marginLeft: 'auto', marginRight: 'auto' }}>
                 {txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}
               </p>
@@ -104,7 +103,7 @@ export default function CollectionsSection({ products, settings }: Props) {
         </div>
 
         {/* ── RIGHT COLUMN ── */}
-        <div>
+        <div style={exitStyle}>
           {/* Featured card */}
           <div style={fadeIn(progress, 0.0, 0.38)}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'start', paddingBottom: 28, borderBottom: '1px solid #e8e8e5' }}>
@@ -132,21 +131,18 @@ export default function CollectionsSection({ products, settings }: Props) {
 
           {/* Collection rows */}
           <div style={fadeIn(progress, 0.1, 0.48)}>
-            {collectionRows.map((row, i) => {
-              if (!vis(cfg, row.id)) return null
-              const label = txt(cfg, row.id, row.def)
-              const tagSlug = toTagSlug(label)
-              return (
-                <Link key={i} href={`/shop?tag=${tagSlug}`} onMouseEnter={() => setHoveredRow(i)} onMouseLeave={() => setHoveredRow(null)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none', cursor: 'pointer', transition: 'all 0.2s', background: hoveredRow === i ? 'rgba(0,0,0,0.015)' : 'transparent' }}>
+            {collectionRows.map((row, i) => (
+              vis(cfg, row.id) ? (
+                <Link key={i} href="/shop" onMouseEnter={() => setHoveredRow(i)} onMouseLeave={() => setHoveredRow(null)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none', cursor: 'pointer', transition: 'all 0.2s', background: hoveredRow === i ? 'rgba(0,0,0,0.015)' : 'transparent' }}>
                   <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: `clamp(20px,2.5vw,${fsize(cfg,row.id,30)}px)`, color: hoveredRow === i ? '#0d0d0d' : clr(cfg,row.id,'#555'), letterSpacing: '-0.3px', transition: 'color 0.2s,transform 0.2s', transform: hoveredRow === i ? 'translateX(6px)' : 'translateX(0)' }}>
-                    {label}
+                    {txt(cfg, row.id, row.def)}
                   </span>
                   <div style={{ width: 36, height: 36, border: `1.5px solid ${hoveredRow === i ? '#0d0d0d' : '#ddd'}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s', background: hoveredRow === i ? '#0d0d0d' : 'transparent' }}>
                     <span style={{ color: hoveredRow === i ? '#fff' : '#bbb', fontSize: 13 }}>→</span>
                   </div>
                 </Link>
-              )
-            })}
+              ) : null
+            ))}
           </div>
         </div>
       </div>
